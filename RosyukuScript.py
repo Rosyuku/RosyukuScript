@@ -25,14 +25,19 @@ def pan2sk(df, target, name="Data"):
     #説明変数の各データについて変換
     for column in expdata.columns:
         #数値データはそのまま
-        if (expdata[column].dtypes == int) or (expdata[column].dtypes == float):
+        if (expdata[column].dtypes == int) or (expdata[column].dtypes == float) or (expdata[column].dtypes == 'int64'):
             pass
         
         #カテゴリデータはバイナリ化
         elif expdata[column].dtypes == object:
-            temp = pd.DataFrame(index=expdata[column].index, columns=column + " = "  + expdata[column].unique()
-            , data=sp.label_binarize(expdata[column], expdata[column].unique()))
-            expdata = pd.concat([expdata, temp], axis=1)
+            if len(expdata[column].unique()) > 2:
+                temp = pd.DataFrame(index=expdata[column].index, columns=column + " = "  + expdata[column].unique()
+                , data=sp.label_binarize(expdata[column], expdata[column].unique()))
+                expdata = pd.concat([expdata, temp], axis=1)
+            else:
+                temp = pd.DataFrame(index=expdata[column].index, columns=[column + " = "  + expdata[column].unique()[0]]
+                , data=sp.label_binarize(expdata[column], expdata[column].unique()))
+                expdata = pd.concat([expdata, temp], axis=1)                
             del expdata[column]
             
         #それ以外のデータ（時系列等）は除外
