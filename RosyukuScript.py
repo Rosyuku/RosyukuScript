@@ -115,16 +115,18 @@ def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfile
     
     #到達ノードIDごとに要素ごとのヒストグラムを作成し保存
     for i in leafList:
-        fig = plt.figure(figsize=(3*len(bunch.feature_names), 3), dpi=300)
+        fig = plt.figure(figsize=(3*len(bunch.feature_names), 3))
         tdf = df[df['#NAMES'] == i]
         
         for j, c in enumerate(bunch.feature_names):
-            ax = fig.add_subplot(1, len(bunch.feature_names), j+1)
+            ax = fig.add_subplot(1, min(16, len(bunch.feature_names)), j+1)
             tdf[c].plot.hist(title=c, color=colors[j],
-            bins=np.arange(minList[c], maxList[c], (maxList[c]-minList[c])/30), xlim=(minList[c], maxList[c]), ylim=(0, ymax))
-        
+            bins=np.arange(minList[c]-0.1, maxList[c]+0.1, (maxList[c]-minList[c])/30), xlim=(minList[c]-0.1, maxList[c]+0.1), ylim=(0, ymax))
+            if j+1 == 16:
+                break
+            
         fig.tight_layout()
-        fig.savefig(str(i) + ".jpeg")
+        fig.savefig(str(i) + ".jpg")
         plt.close(fig)
     
     #eteのTreeインスタンスを構築
@@ -192,7 +194,7 @@ def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfile
             node.add_face(imgface, column=3, position="branch-right")
             
             #作成したヒストグラムを設置
-            imgface2 = ImgFace(str(i) + ".jpeg", height=150)
+            imgface2 = ImgFace(str(i) + ".jpg", height=150)
             node.add_face(imgface2, column=4, position="aligned")
     
     #不要な要素を表示しないように設定    
