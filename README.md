@@ -1,0 +1,2 @@
+# RosyukuScript
+自作PythonモジュールをGitHubで管理
