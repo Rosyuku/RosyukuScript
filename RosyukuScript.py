@@ -115,19 +115,19 @@ def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfile
     
     #到達ノードIDごとに要素ごとのヒストグラムを作成し保存
     for i in leafList:
-        fig = plt.figure(figsize=(3*len(bunch.feature_names), 3))
-        tdf = df[df['#NAMES'] == i]
-        
-        for j, c in enumerate(bunch.feature_names):
-            ax = fig.add_subplot(1, min(16, len(bunch.feature_names)), j+1)
-            tdf[c].plot.hist(title=c, color=colors[j],
-            bins=np.arange(minList[c]-0.1, maxList[c]+0.1, (maxList[c]-minList[c])/30), xlim=(minList[c]-0.1, maxList[c]+0.1), ylim=(0, ymax))
-            if j+1 == 16:
-                break
+        tdf = df[df['#NAMES'] == i]   
+        #1つのグラフには16要素まで表示
+        for k in range(bunch.feature_names.shape[0] // 16 + 1):
+            fig = plt.figure(figsize=(3*len(bunch.feature_names), 3))
             
-        fig.tight_layout()
-        fig.savefig(str(i) + ".jpg")
-        plt.close(fig)
+            for j, c in enumerate(bunch.feature_names[16*k:16*k+15]):
+                ax = fig.add_subplot(1, min(16, len(bunch.feature_names)), j+1)
+                tdf[c].plot.hist(title=c, color=colors[j],
+                bins=np.arange(minList[c]-0.1, maxList[c]+0.1, (maxList[c]-minList[c])/30), xlim=(minList[c]-0.1, maxList[c]+0.1), ylim=(0, ymax))
+                
+            fig.tight_layout()
+            fig.savefig(str(i) + "_" + str(k) + ".jpg")
+            plt.close(fig)
     
     #eteのTreeインスタンスを構築
     tree = Tree()
@@ -193,9 +193,10 @@ def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfile
             imgface.margin_right = 10            
             node.add_face(imgface, column=3, position="branch-right")
             
-            #作成したヒストグラムを設置
-            imgface2 = ImgFace(str(i) + ".jpg", height=150)
-            node.add_face(imgface2, column=4, position="aligned")
+            for k in range(bunch.feature_names.shape[0] // 16 + 1):
+                #作成したヒストグラムを設置
+                imgface2 = ImgFace(str(i) + "_" + str(k) + ".jpg", height=150)
+                node.add_face(imgface2, column=4+k, position="aligned")
     
     #不要な要素を表示しないように設定    
     ts = TreeStyle()
