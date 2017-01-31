@@ -113,11 +113,16 @@ def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfile
     #グラフのフォントサイズ
     plt.rcParams["font.size"] = fontsize
     
+    try:
+        fetureNum = bunch.feature_names.shape[0]
+    except:
+        fetureNum = len(bunch.feature_names)
+        
     #到達ノードIDごとに要素ごとのヒストグラムを作成し保存
     for i in leafList:
         tdf = df[df['#NAMES'] == i]   
         #1つのグラフには16要素まで表示
-        for k in range(bunch.feature_names.shape[0] // 16 + 1):
+        for k in range(fetureNum // 16 + 1):
             fig = plt.figure(figsize=(3*len(bunch.feature_names), 3))
             
             for j, c in enumerate(bunch.feature_names[16*k:16*k+15]):
@@ -193,7 +198,7 @@ def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfile
             imgface.margin_right = 10            
             node.add_face(imgface, column=3, position="branch-right")
             
-            for k in range(bunch.feature_names.shape[0] // 16 + 1):
+            for k in range(fetureNum // 16 + 1):
                 #作成したヒストグラムを設置
                 imgface2 = ImgFace(str(i) + "_" + str(k) + ".jpg", height=150)
                 node.add_face(imgface2, column=4+k, position="aligned")
