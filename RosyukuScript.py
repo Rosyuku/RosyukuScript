@@ -57,11 +57,14 @@ def pan2sk(df, target, name="Data"):
     #カテゴリデータはシリアル化して登録
     if objdata.dtypes == object:
         
+        tmp = objdata.unique()
+        tmp.sort()
+        
         le = sp.LabelEncoder()
-        le.fit(objdata.unique())
+        le.fit(tmp)
         
         targetData = le.transform(objdata)
-        target_names = objdata.unique()
+        target_names = tmp
 
     #データセットの名称を用意
     DESCR = name
@@ -74,9 +77,13 @@ def pan2sk(df, target, name="Data"):
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from ete3 import Tree, TreeStyle, TextFace, PieChartFace, ImgFace
+from ete3 import Tree
+from ete3.treeview import TextFace, PieChartFace, ImgFace, TreeStyle
 
-def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfiledpi=300, fontsize=15):
+def insert(pos, s, x):
+  return x.join([s[:pos], s[pos:] ])
+
+def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfiledpi=300, fontsize=15, picture=True):
     """
     ＜概要＞
     scikit-learnの決定木をeteを使って可視化するファンクション
@@ -126,8 +133,14 @@ def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfile
             fig = plt.figure(figsize=(3*len(bunch.feature_names), 3))
             
             for j, c in enumerate(bunch.feature_names[16*k:16*k+15]):
+                
                 ax = fig.add_subplot(1, min(16, len(bunch.feature_names)), j+1)
-                tdf[c].plot.hist(title=c, color=colors[j],
+                
+                title = c
+                if len(title) > 10:                    
+                    title = title[:10] + "..."
+                
+                tdf[c].plot.hist(title=title, color=colors[j],
                 bins=np.arange(minList[c]-0.1, maxList[c]+0.1, (maxList[c]-minList[c])/30), xlim=(minList[c]-0.1, maxList[c]+0.1), ylim=(0, ymax))
                 
             fig.tight_layout()
@@ -147,9 +160,15 @@ def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfile
         node = tree.search_nodes(name=str(i))[0]
         
         #ノードごとに配分の円グラフを作成
-        Pie = PieChartFace(percents=clf.tree_.value[i][0] / clf.tree_.value[i].sum() * 100
-        , width=clf.tree_.n_node_samples[i]
-        , height=clf.tree_.n_node_samples[i])
+        if picture == True:
+            Pie = PieChartFace(percents=clf.tree_.value[i][0] / clf.tree_.value[i].sum() * 100
+            , width=clf.tree_.n_node_samples[i] / clf.tree_.n_node_samples[0] * 60
+            , height=clf.tree_.n_node_samples[i] / clf.tree_.n_node_samples[0] * 60)
+        else:
+            Pie = PieChartFace(percents=[100, 0]
+            , width=clf.tree_.n_node_samples[i] / clf.tree_.n_node_samples[0] * 60
+            , height=clf.tree_.n_node_samples[i] / clf.tree_.n_node_samples[0] * 60)
+            
         Pie.opacity = 0.8
         Pie.hz_align = 1
         Pie.vt_align = 1
@@ -185,18 +204,22 @@ def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfile
             text2 = "{0:.0f}".format(clf.tree_.value[i][0][np.argmax(clf.tree_.value.T, axis=0)[0][i]]) +"/"+ "{0:.0f}".format(clf.tree_.n_node_samples[i])
             
             #リーフの情報を書き込み
-            node.add_face(TextFace(bunch.target_names[np.argmax(clf.tree_.value.T, axis=0)[0][i]])
-            , column=4, position="branch-right")
-            node.add_face(TextFace(text1)
-            , column=4, position="branch-right")
-            node.add_face(TextFace(text2)
-            , column=4, position="branch-right")
+            try:
+                node.add_face(TextFace(bunch.target_names[np.argmax(clf.tree_.value.T, axis=0)[0][i]])
+                , column=4, position="branch-right")
+                node.add_face(TextFace(text1)
+                , column=4, position="branch-right")
+                node.add_face(TextFace(text2)
+                , column=4, position="branch-right")
+            except:
+                pass
             
             #クラスに対応した画像を設置
-            imgface = ImgFace(bunch.target_names[np.argmax(clf.tree_.value.T, axis=0)[0][i]] + "." + figext, height=80)
-            imgface.margin_left = 10
-            imgface.margin_right = 10            
-            node.add_face(imgface, column=3, position="branch-right")
+            if picture == True:
+                imgface = ImgFace(bunch.target_names[np.argmax(clf.tree_.value.T, axis=0)[0][i]] + "." + figext, height=80)
+                imgface.margin_left = 10
+                imgface.margin_right = 10            
+                node.add_face(imgface, column=3, position="branch-right")
             
             for k in range(fetureNum // 16 + 1):
                 #作成したヒストグラムを設置

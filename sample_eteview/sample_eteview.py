@@ -17,7 +17,7 @@ if __name__ == "__main__":
     iris = load_iris()
      
     #決定木学習
-    clf = tree.DecisionTreeClassifier(max_depth=5)
+    clf = tree.DecisionTreeClassifier(max_depth=3)
     clf.fit(iris.data, iris.target)
     
     #eteview実行
