@@ -281,4 +281,53 @@ def targethist(df, target, save=False, kind='hist', **kwards):
         ax = pdf.loc[:, column].plot(kind=kind, title=column, **kwards)
         
         if save==True:
-            ax.get_figure().savefig(column+".png")     
+            ax.get_figure().savefig(column+".png")
+            
+def directoryTreeview(path):
+    """
+    ＜概要＞
+    pathに指定されたフォルダ以下の構造とファイルの概要を可視化するファンクション
+     
+    ＜引数＞
+    path：ディレクトリツリーのルートフォルダ
+     
+    ＜出力＞
+    df：データフレーム
+    """
+
+    import os
+    import glob
+    import pandas as pd
+    
+    def stat2(path):
+       try:
+           return list(os.stat(path))
+       except:
+           return [pd.np.NaN]*10    
+       
+    #ディレクトリをリーフまで再帰的に探索
+    files = glob.glob(path + "/**", recursive=True)
+
+    #ディレクトリ構造に関するデータフレーム
+    pathData = pd.DataFrame(files)[0].str.split("/", expand=True).loc[:, len(path.split("/"))-1:]
+   
+    #データの概要に関するデータフレーム
+    fileData = pd.DataFrame(files).applymap(stat2)[0].apply(pd.Series)
+    fileData.columns = ['保護ビット',
+                        'iノード番号',
+                        'デバイス',
+                        'ハードリンク数',
+                        '所有者のユーザID',
+                        '所有者のグループID',
+                        'ファイルサイズ（バイト）',
+                        '最終アクセス日時',
+                        '最終更新日時',
+                        '作成時刻',
+                        ]
+   
+    fileData[['最終アクセス日時', '最終更新日時', '作成時刻']] = fileData[['最終アクセス日時', '最終更新日時', '作成時刻']].applymap(pd.datetime.fromtimestamp)
+
+    #concatして出力する   
+    df = pd.concat([pathData, fileData], axis=1)
+    
+    return df
