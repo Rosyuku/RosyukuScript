@@ -1,87 +1,100 @@
 # -*- coding: utf-8 -*-
-
-import pandas as pd
-import numpy as np
-from sklearn import datasets
-import sklearn.preprocessing as sp
-
+ 
 def pan2sk(df, target, name="Data"):
     """
     ＜概要＞
     pandasのデータフレームをscikit-learnの入力データに変換する関数
-    
+     
     ＜引数＞
     df：データフレーム
     target：目的変数のカラム名
-    
+     
     ＜出力＞
     Bunch：scikit-learn形式に変換したデータ
     """
-    
+
+    import pandas as pd
+    import numpy as np
+    from sklearn import datasets
+    import sklearn.preprocessing as sp
+     
     #説明変数のデータ列と目的変数のデータ列に分ける    
     expdata = df[df.columns[df.columns!=target]]
     objdata = df[target].copy()
-    
+     
     #説明変数の各データについて変換
     for column in expdata.columns:
         #数値データはそのまま
-        if (expdata[column].dtypes == int) or (expdata[column].dtypes == float) or (expdata[column].dtypes == 'int64'):
+        if (expdata[column].dtypes == int) or (expdata[column].dtypes == float):
             pass
-        
+         
         #カテゴリデータはバイナリ化
         elif expdata[column].dtypes == object:
-            if len(expdata[column].unique()) > 2:
-                temp = pd.DataFrame(index=expdata[column].index, columns=column + " = "  + expdata[column].unique()
-                , data=sp.label_binarize(expdata[column], expdata[column].unique()))
-                expdata = pd.concat([expdata, temp], axis=1)
-            else:
-                temp = pd.DataFrame(index=expdata[column].index, columns=[column + " = "  + expdata[column].unique()[0]]
-                , data=sp.label_binarize(expdata[column], expdata[column].unique()))
-                expdata = pd.concat([expdata, temp], axis=1)                
+            temp = pd.DataFrame(index=expdata[column].index, columns=column + " = "  + expdata[column].unique()
+            , data=sp.label_binarize(expdata[column], expdata[column].unique()))
+            expdata = pd.concat([expdata, temp], axis=1)
             del expdata[column]
-            
+             
         #それ以外のデータ（時系列等）は除外
         else:
             del expdata[column]
-    
+     
     #説明変数のデータとカラム名を分けておく
     data=np.array(expdata)
     feature_names=np.array(expdata.columns)
-    
+     
     #目的変数のデータをシリアル化する
     #数値データはそのまま登録
     if (objdata.dtypes == int) or (objdata.dtypes == float):
         targetData = np.array(objdata)
         target_names = []
-
+ 
     #カテゴリデータはシリアル化して登録
     if objdata.dtypes == object:
-        
-        tmp = objdata.unique()
-        tmp.sort()
-        
+         
         le = sp.LabelEncoder()
-        le.fit(tmp)
-        
+        le.fit(objdata.unique())
+         
         targetData = le.transform(objdata)
-        target_names = tmp
-
+        target_names = objdata.unique()
+ 
     #データセットの名称を用意
     DESCR = name
-    
+     
     #オブジェクト作成
     skData = datasets.base.Bunch(DESCR=DESCR, data=data, feature_names=feature_names, target=targetData, target_names=target_names)
-    
+     
     return skData
-    
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from ete3 import Tree
-from ete3.treeview import TextFace, PieChartFace, ImgFace, TreeStyle
 
-def insert(pos, s, x):
-  return x.join([s[:pos], s[pos:] ])
+def sk2pan(skData, target="Target"):
+    """
+    ＜概要＞
+    scikit-learnの入力データをpandasのデータフレームに変換する関数
+     
+    ＜引数＞
+    skData：scikit-learn形式のBunch形式のデータ
+    target：目的変数のカラム名
+     
+    ＜出力＞
+    df：データフレーム形式に変換したデータ
+    """
+
+    import pandas as pd
+    import numpy as np
+ 
+    expdata = pd.DataFrame(skData.data, columns=skData.feature_names)
+    objdata = pd.DataFrame(skData.target, columns=[target])
+    
+    try:
+        objdict = dict(zip(np.arange(skData.target_names.shape[0]), skData.target_names))
+        objdata = objdata[target].map(objdict)
+    except:
+        pass
+    
+    df = pd.concat([expdata, objdata], axis=1)
+    
+    return df
+    
 
 def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfiledpi=300, fontsize=15, picture=True):
     """
@@ -100,6 +113,15 @@ def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfile
     ＜出力＞
     None：出力なし
     """
+
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from ete3 import Tree
+    from ete3.treeview import TextFace, PieChartFace, ImgFace, TreeStyle
+    
+    def insert(pos, s, x):
+        return x.join([s[:pos], s[pos:] ])
     
     #データフレーム作成
     df = pd.DataFrame(data=bunch.data, columns=bunch.feature_names)
