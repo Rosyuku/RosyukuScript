@@ -258,3 +258,27 @@ def eteview(bunch, clf, ymax=30, figext="jpg", outfilename="mytree.png", outfile
     
     #グラフのフォントサイズを元に戻す
     plt.rcParams["font.size"] = deffont
+    
+def targethist(df, target, save=False, kind='hist', **kwards):
+    """
+    ＜概要＞
+    目的変数の値ごとに色分けしたヒストグラムを描くファンクション
+     
+    ＜引数＞
+    df：データフレーム
+    target：目的変数のカラム名
+    save：Trueの場合グラフを保存する
+     
+    ＜出力＞
+    None：出力なし
+    """
+    
+    columns = df.columns[df.columns != target]
+    pdf = df.pivot_table(index=df.index, columns=target)
+    
+    for column in columns:
+        
+        ax = pdf.loc[:, column].plot(kind=kind, title=column, **kwards)
+        
+        if save==True:
+            ax.get_figure().savefig(column+".png")     
